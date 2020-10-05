@@ -4,6 +4,7 @@
 #define WIN_WIDTH 1024
 #define WIN_HEIGHT 768 // 窗口宽高
 #define MAX_SHAKE 32767// 定义一个足够大的最大长度
+#define MAX_SNAKE 100// 定义一个足够大的数量
 enum DIR // 蛇的方向
 {
 	UP,
@@ -13,6 +14,7 @@ enum DIR // 蛇的方向
 };
 struct Snake_tlg // 蛇的结构体
 {
+public :
 	int conf;// 决定是玩家操控还是电脑操控
 	int leng;// 蛇的长度节，决定蛇身由多少圆形构成
 	int dir;// 蛇的方向
@@ -84,6 +86,18 @@ void GameDraw() {
 	/* 显示分数结束 */
 
 }
+bool HitJudge(POINT n1, POINT n2) {
+	if (n1.x - 5 <= n2.x && n2.x <= n1.x + 5 &&
+		n1.y - 5 <= n2.y && n2.y <= n1.y + 5)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+
+}
 void SnakeMove(){
 	for (int i = snake.leng - 1; i > 0; i--)
 	{
@@ -108,7 +122,7 @@ void SnakeMove(){
 }
 void SnakeRush(){}
 void EatFood(){
-	if ( HitJudge(food.fd,snake.coor[0]) && food.flag == 1)//暂时使用这样的碰撞检测
+	if ( HitJudge(food.fd,snake.coor[0])==true && food.flag == 1)//暂时使用这样的碰撞检测
 	{
 		snake.leng++;
 		snake.score += 10;
@@ -143,9 +157,6 @@ void DeathJudge() {
 			exit(233333);
 		}
 	}
-}
-bool HitJudge(POINT n1, POINT n2) {
-
 }
 int main() {
 	
