@@ -5,6 +5,8 @@
 #define WIN_HEIGHT 768 // 窗口宽高
 #define MAX_SHAKE 32767// 定义一个足够大的最大长度
 #define MAX_SNAKE 100// 定义一个足够大的数量
+const int RUSH = 30;
+const int NORMAL = 60;
 enum DIR // 蛇的方向
 {
 	UP,
@@ -20,6 +22,7 @@ public :
 	int dir;// 蛇的方向
 	int score;// 成绩
 	int rsize;// 尺寸
+	int speed;
 	POINT coor[MAX_SHAKE];// 位置
 
 }snake;
@@ -27,7 +30,7 @@ struct Food_tlg// 食物的结构体
 {
 	POINT fd;
 	int flag;
-	int size;
+	int rsize;
 	DWORD color;
 }food;
 void Gameinit() {
@@ -37,6 +40,7 @@ void Gameinit() {
 	snake.dir = LEFT;// 暂定左方向
 	snake.score = 0;
 	snake.rsize = 10;
+	snake.speed = NORMAL;
 	snake.coor[2].x = 512 + snake.rsize*2;
 	snake.coor[2].y = 384;
 	snake.coor[1].x = 512 + snake.rsize;
@@ -49,7 +53,7 @@ void Gameinit() {
 	food.fd.x = rand() % WIN_WIDTH;
 	food.fd.y = rand() % WIN_HEIGHT;
 	food.flag = 1;
-	food.size = 12;
+	food.rsize = 5;
 	food.color = RGB(rand() % 256,rand() % 256,rand() % 256);
 	/* 初始化食物结束 */
 }
@@ -73,7 +77,7 @@ void GameDraw() {
 	/* 画食物 */
 	if (food.flag == 1) {
      setfillcolor(food.color);
-	 fillrectangle(food.fd.x, food.fd.y, food.fd.x + food.size, food.fd.y + food.size);
+	 fillcircle(food.fd.x, food.fd.y, food.rsize);
 	}
 	
 	/* 画食物结束 */
@@ -87,8 +91,9 @@ void GameDraw() {
 
 }
 bool HitJudge(POINT n1, POINT n2) {
-	if (n1.x - 5 <= n2.x && n2.x <= n1.x + 5 &&
-		n1.y - 5 <= n2.y && n2.y <= n1.y + 5)
+	int dsize = (snake.rsize - food.rsize)+3;
+	if (n1.x - dsize <= n2.x && n2.x <= n1.x + dsize &&
+		n1.y - dsize <= n2.y && n2.y <= n1.y + dsize)// 无奈之举
 	{
 		return true;
 	}
@@ -97,6 +102,9 @@ bool HitJudge(POINT n1, POINT n2) {
 		return false;
 	}
 
+}
+bool HitJudge_ss(POINT n1, POINT n2) {
+	return false;
 }
 void SnakeMove(){
 	for (int i = snake.leng - 1; i > 0; i--)
@@ -120,7 +128,6 @@ void SnakeMove(){
 		break;
 	}//移动
 }
-void SnakeRush(){}
 void EatFood(){
 	if ( HitJudge(food.fd,snake.coor[0])==true && food.flag == 1)//暂时使用这样的碰撞检测
 	{
@@ -148,10 +155,13 @@ void KeyControl(){
 	if (GetAsyncKeyState(VK_RIGHT) && snake.dir != LEFT) {
 		snake.dir = RIGHT;
 	}
-	}// 使用了winAPI
-void DeathJudge() {
+	if (GetAsyncKeyState(VK_SPACE)) {
+		snake.speed = RUSH; // 加速
+	}
+}// 使用了winAPI
+void DeathJudge(){
 	for (int i = 1; i <= snake.leng - 1; i++) {
-		if (HitJudge(snake.coor[0], snake.coor[i]) == true) {
+		if (HitJudge_ss(snake.coor[0], snake.coor[i]) == true) {
 			outtextxy(512, 384, "Game Over!");
 			_getch();
 			exit(233333);
@@ -159,16 +169,30 @@ void DeathJudge() {
 	}
 }
 int main() {
-	
+	int wait = 0;
 	initgraph(WIN_WIDTH, WIN_HEIGHT,SHOWCONSOLE);// 初始化窗口
 	Gameinit();
+	DWORD t1, t2;
+	t1 = t2 = GetTickCount();
+	BeginBatchDraw();
 	while (1) {
+		if ((t2 - t1) > snake.speed) {
+			SnakeMove();
+			t1 = t2;
+		}
+		t2= GetTickCount();
+		FlushBatchDraw();
+		if (snake.speed == RUSH){
+			wait += 10;
+				if (wait >= 100) {
+					snake.speed = NORMAL;
+					wait = 0;// 速度回复
+				}
+		}
 		GameDraw();
-		SnakeMove();
 		EatFood();
 		KeyControl();
 		DeathJudge();
-		Sleep(50);
 	}
 	
 
