@@ -18,13 +18,13 @@ enum DIR // 蛇的方向
 struct Snake_tlg // 蛇的结构体
 {
 public :
-	int conf;// 决定是玩家操控还是电脑操控
-	int leng;// 蛇的长度节，决定蛇身由多少圆形构成
-	int dir;// 蛇的方向
-	int score;// 成绩
-	int rsize;// 尺寸
-	int speed;
-	POINT coor[MAX_SHAKE];// 位置
+	int conf[50];// 决定是玩家操控还是电脑操控
+	int leng[50];// 蛇的长度节，决定蛇身由多少圆形构成
+	int dir[50];// 蛇的方向
+	int score[50];// 成绩
+	int rsize[50];// 尺寸
+	int speed[50];
+	POINT coor[MAX_SHAKE][50];// 位置
 
 }snake;
 struct Food_tlg// 食物的结构体
@@ -38,17 +38,17 @@ void Gameinit() {
 	srand(GetTickCount());
 	int i = 0;
 	/* 初始化蛇 */
-	snake.leng = 3;
-	snake.dir = LEFT;// 暂定左方向
-	snake.score = 0;
-	snake.rsize = 10;
-	snake.speed = NORMAL;
-	snake.coor[2].x = WIN_WIDTH/2 + snake.rsize*2;
-	snake.coor[2].y = WIN_HEIGHT/2;
-	snake.coor[1].x = WIN_WIDTH/2 + snake.rsize;
-	snake.coor[1].y = WIN_HEIGHT;
-	snake.coor[0].x = WIN_WIDTH / 2;
-	snake.coor[0].y = WIN_HEIGHT/2;
+	snake.leng[0] = 3;
+	snake.dir[0] = LEFT;// 暂定左方向
+	snake.score[0] = 0;
+	snake.rsize[0] = 10;
+	snake.speed[0] = NORMAL;
+	snake.coor[2][0].x = WIN_WIDTH/2 + snake.rsize[0] *2;
+	snake.coor[2][0].y = WIN_HEIGHT/2;
+	snake.coor[1][0].x = WIN_WIDTH/2 + snake.rsize[0];
+	snake.coor[1][0].y = WIN_HEIGHT;
+	snake.coor[0][0].x = WIN_WIDTH / 2;
+	snake.coor[0][0].y = WIN_HEIGHT/2;
 	/* 初始化蛇结束 */
 
 	/* 初始化食物 */
@@ -63,15 +63,15 @@ void GameDraw() {
 	setbkcolor(RGB(106, 170, 150));// 背景颜色设置
 	cleardevice();
 	/* 画蛇 */
-	for (int i = 0; i < snake.leng; i++) {
+	for (int i = 0; i < snake.leng[0]; i++) {
 		setfillcolor(RGB(66, 75, 98));
 		if (i != 0) {
-			fillcircle(snake.coor[i].x, snake.coor[i].y, 10);
+			fillcircle(snake.coor[i][0].x, snake.coor[i][0].y, 10);
 		}
 		else {
 			setfillcolor(RGB(166, 75, 98));
-			fillcircle(snake.coor[i].x, snake.coor[i].y, 12);
-			fillcircle(snake.coor[i].x, snake.coor[i].y, 2);
+			fillcircle(snake.coor[i][0].x, snake.coor[i][0].y, 12);
+			fillcircle(snake.coor[i][0].x, snake.coor[i][0].y, 2);
 		}// 标记头
 	}
 	/* 画蛇结束 */
@@ -88,14 +88,14 @@ void GameDraw() {
 
 	/* 显示分数开始 */
 	char tmp[20] = "";
-	sprintf(tmp, "分数:%d", snake.score);
+	sprintf(tmp, "分数:%d", snake.score[0]);
 	setbkmode(TRANSPARENT);
 	outtextxy(20, 20, tmp);
 	/* 显示分数结束 */
 
 }
 bool HitJudge(POINT n1, POINT n2) {
-	int dsize = (snake.rsize - food.rsize)+3;
+	int dsize = (snake.rsize[0] - food.rsize)+3;
 	if (n1.x - dsize <= n2.x && n2.x <= n1.x + dsize &&
 		n1.y - dsize <= n2.y && n2.y <= n1.y + dsize)// 无奈之举
 	{
@@ -108,7 +108,16 @@ bool HitJudge(POINT n1, POINT n2) {
 
 }
 bool HitJudge_ss(POINT n1, POINT n2) {
-	return false;
+	int dsize = 3;
+	if (n1.x - dsize <= n2.x && n2.x <= n1.x + dsize &&
+		n1.y - dsize <= n2.y && n2.y <= n1.y + dsize)// 无奈之举
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 void AppearFood(){
 	int i ;
@@ -122,20 +131,20 @@ void AppearFood(){
 	}
 }
 void SnakeMove(){
-	for (int i = snake.leng - 1; i > 0; i--)
+	for (int i = snake.leng[0] - 1; i > 0; i--)
 	{
-		snake.coor[i].x = snake.coor[i - 1].x;
-		snake.coor[i].y = snake.coor[i - 1].y;
+		snake.coor[i][0].x = snake.coor[i - 1][0].x;
+		snake.coor[i][0].y = snake.coor[i - 1][0].y;
 	}// 蛇身继承运动
-	switch (snake.dir)
+	switch (snake.dir[0])
 	{
-	case UP:snake.coor[0].y -= 10;
+	case UP:snake.coor[0][0].y -= 10;
 		break;
-	case DOWN:snake.coor[0].y += 10;
+	case DOWN:snake.coor[0][0].y += 10;
 		break;
-	case LEFT:snake.coor[0].x -= 10;
+	case LEFT:snake.coor[0][0].x -= 10;
 		break;
-	case RIGHT:snake.coor[0].x += 10;
+	case RIGHT:snake.coor[0][0].x += 10;
 		break;
 
 
@@ -145,34 +154,34 @@ void SnakeMove(){
 }
 void EatFood(){
 	for (int i = 0; i <= 100; i++) {
-		if (HitJudge(food.fd[i], snake.coor[0]) == true && food.flag[i] == 1)//暂时使用这样的碰撞检测
+		if (HitJudge(food.fd[i], snake.coor[0][0]) == true && food.flag[i] == 1)//暂时使用这样的碰撞检测
 		{
-			snake.leng++;
-			snake.score += 10;
+			snake.leng[0]++;
+			snake.score[0] += 10;
 			food.flag[i] = 0;
 		}
 	}
 }
 void KeyControl(){
-	if (GetAsyncKeyState(VK_UP) && snake.dir != DOWN) {
-		snake.dir = UP;
+	if (GetAsyncKeyState(VK_UP) && snake.dir[0] != DOWN) {
+		snake.dir[0] = UP;
 	}
-	if (GetAsyncKeyState(VK_DOWN) && snake.dir != UP) {
-		snake.dir = DOWN;
+	if (GetAsyncKeyState(VK_DOWN) && snake.dir[0] != UP) {
+		snake.dir[0] = DOWN;
 	}
-	if (GetAsyncKeyState(VK_LEFT) && snake.dir != RIGHT) {
-		snake.dir = LEFT;
+	if (GetAsyncKeyState(VK_LEFT) && snake.dir[0] != RIGHT) {
+		snake.dir[0] = LEFT;
 	}
-	if (GetAsyncKeyState(VK_RIGHT) && snake.dir != LEFT) {
-		snake.dir = RIGHT;
+	if (GetAsyncKeyState(VK_RIGHT) && snake.dir[0] != LEFT) {
+		snake.dir[0] = RIGHT;
 	}
 	if (GetAsyncKeyState(VK_SPACE)) {
-		snake.speed = RUSH; // 加速
+		snake.speed[0] = RUSH; // 加速
 	}
 }// 使用了winAPI
 void DeathJudge(){
-	for (int i = 1; i <= snake.leng - 1; i++) {
-		if (HitJudge_ss(snake.coor[0], snake.coor[i]) == true) {
+	for (int i = 1; i <= snake.leng[0] - 1; i++) {
+		if (HitJudge_ss(snake.coor[0][0], snake.coor[i][0]) == true) {
 			outtextxy(512, 384, "Game Over!");
 			_getch();
 			exit(233333);
@@ -189,16 +198,16 @@ int main() {
 	t1 = t2 = GetTickCount();
 	BeginBatchDraw();
 	while (1) {
-		if ((t2 - t1) > snake.speed) {
+		if ((t2 - t1) > snake.speed[0]) {
 			SnakeMove();
 			t1 = t2;
 		}
 		t2= GetTickCount();
 		FlushBatchDraw();
-		if (snake.speed == RUSH){
+		if (snake.speed[0] == RUSH){
 			wait += 10;
 				if (wait >= 100) {
-					snake.speed = NORMAL;
+					snake.speed[0] = NORMAL;
 					wait = 0;// 速度回复
 				}
 		}
