@@ -7,6 +7,7 @@
 #define MAX_SNAKE 100// 定义一个足够大的数量
 const int RUSH = 30;
 const int NORMAL = 60;
+const int INTERVAL = 1000;
 enum DIR // 蛇的方向
 {
 	UP,
@@ -28,33 +29,34 @@ public :
 }snake;
 struct Food_tlg// 食物的结构体
 {
-	POINT fd;
-	int flag;
+	POINT fd[100];
+	int flag[100];
 	int rsize;
-	DWORD color;
+	DWORD color[100];
 }food;
 void Gameinit() {
 	srand(GetTickCount());
+	int i = 0;
 	/* 初始化蛇 */
 	snake.leng = 3;
 	snake.dir = LEFT;// 暂定左方向
 	snake.score = 0;
 	snake.rsize = 10;
 	snake.speed = NORMAL;
-	snake.coor[2].x = 512 + snake.rsize*2;
-	snake.coor[2].y = 384;
-	snake.coor[1].x = 512 + snake.rsize;
-	snake.coor[1].y = 384;
-	snake.coor[0].x = 512;
-	snake.coor[0].y = 384;
+	snake.coor[2].x = WIN_WIDTH/2 + snake.rsize*2;
+	snake.coor[2].y = WIN_HEIGHT/2;
+	snake.coor[1].x = WIN_WIDTH/2 + snake.rsize;
+	snake.coor[1].y = WIN_HEIGHT;
+	snake.coor[0].x = WIN_WIDTH / 2;
+	snake.coor[0].y = WIN_HEIGHT/2;
 	/* 初始化蛇结束 */
 
 	/* 初始化食物 */
-	food.fd.x = rand() % WIN_WIDTH;
-	food.fd.y = rand() % WIN_HEIGHT;
-	food.flag = 1;
+	food.fd[i].x = rand() % WIN_WIDTH;
+	food.fd[i].y = rand() % WIN_HEIGHT;
+	food.flag[i] = 1;
 	food.rsize = 5;
-	food.color = RGB(rand() % 256,rand() % 256,rand() % 256);
+	food.color[i] = RGB(rand() % 256,rand() % 256,rand() % 256);
 	/* 初始化食物结束 */
 }
 void GameDraw() {
@@ -75,9 +77,11 @@ void GameDraw() {
 	/* 画蛇结束 */
 
 	/* 画食物 */
-	if (food.flag == 1) {
-     setfillcolor(food.color);
-	 fillcircle(food.fd.x, food.fd.y, food.rsize);
+	for (int i = 0; i <= 100; i++) {
+		if (food.flag[i] == 1) {
+			setfillcolor(food.color[i]);
+			fillcircle(food.fd[i].x, food.fd[i].y, food.rsize);
+		}
 	}
 	
 	/* 画食物结束 */
@@ -106,6 +110,17 @@ bool HitJudge(POINT n1, POINT n2) {
 bool HitJudge_ss(POINT n1, POINT n2) {
 	return false;
 }
+void AppearFood(){
+	int i ;
+	srand(GetTickCount());
+	i = rand() % 100;
+	if (food.flag[i] != 1) {
+		food.flag[i] = 1;
+		food.color[i] = RGB(rand() % 256, rand() % 256, rand() % 256);
+		food.fd[i].x = rand() % WIN_WIDTH;
+		food.fd[i].y = rand() % WIN_HEIGHT;
+	}
+}
 void SnakeMove(){
 	for (int i = snake.leng - 1; i > 0; i--)
 	{
@@ -129,17 +144,13 @@ void SnakeMove(){
 	}//移动
 }
 void EatFood(){
-	if ( HitJudge(food.fd,snake.coor[0])==true && food.flag == 1)//暂时使用这样的碰撞检测
-	{
-		snake.leng++;
-		snake.score += 10;
-		food.flag = 0;
-	}
-	if (food.flag == 0) {
-		food.fd.x = rand() % WIN_WIDTH;
-		food.fd.y = rand() % WIN_HEIGHT;
-		food.flag = 1;
-		food.color = RGB(rand() % 256, rand() % 256, rand() % 256);
+	for (int i = 0; i <= 100; i++) {
+		if (HitJudge(food.fd[i], snake.coor[0]) == true && food.flag[i] == 1)//暂时使用这样的碰撞检测
+		{
+			snake.leng++;
+			snake.score += 10;
+			food.flag[i] = 0;
+		}
 	}
 }
 void KeyControl(){
@@ -170,6 +181,8 @@ void DeathJudge(){
 }
 int main() {
 	int wait = 0;
+	int waitf = 0;
+	srand(GetTickCount());
 	initgraph(WIN_WIDTH, WIN_HEIGHT,SHOWCONSOLE);// 初始化窗口
 	Gameinit();
 	DWORD t1, t2;
@@ -189,6 +202,11 @@ int main() {
 					wait = 0;// 速度回复
 				}
 		}
+		waitf += rand() % 10;
+			if (waitf >= INTERVAL) {
+				AppearFood();
+				waitf = 0;
+			}
 		GameDraw();
 		EatFood();
 		KeyControl();
