@@ -1,2 +1,3 @@
 ﻿  snake.cpp
+E:\Projects\SNAKE\snake.cpp(60): warning C4715: “rands”: 不是所有的控件路径都返回值
   SNAKE.vcxproj -> E:\Projects\SNAKE\Debug\SNAKE.exe

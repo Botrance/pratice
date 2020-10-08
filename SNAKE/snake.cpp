@@ -9,14 +9,18 @@
 #define WIN_HEIGHT 768// 窗口宽高
 #define MAX_SHAKE 32767// 定义一个足够大的最大长度
 #define MAX_SNAKE 100// 定义一个足够大的数量
-const int RUSH = 30;
-const int NORMAL = 60;
-const int INTERVAL = 500;
-const double hatred = 100.0;
-const int fnum = 500;
-const int ainum = 10;
-int conf[100] = {0};
-int lifenum = 0;
+const int RUSH = 30;// 冲刺速度
+const int NORMAL = 60;// 标准速度
+const int INTERVAL = 600;// 食物出现间隔
+const int AIINTERVAL = 100;// AI方向改变间隔
+const double hatred = 1;// 仇恨值
+const int fnum = 500;// 食物最大个数
+const int ainum = 10;// AI个数
+int conf[100] = {0};// 确定是否有控制
+int lifenum = 0;// 剩余蛇个数
+int waitAI = 0;// AI蛇改变方向缓冲
+int px = WIN_WIDTH/2;// 校准坐标
+int py = WIN_HEIGHT/2;// 校准坐标
 enum DIR // 蛇的方向
 {
 	UP,
@@ -33,7 +37,7 @@ public :
 	int dir[50];// 蛇的方向
 	int score[50];// 成绩
 	int rsize[50];// 尺寸
-	int speed[50];
+	int speed[50];// 速度
 	int r[50] = {0};
 	int g[50] = {0};
 	int b[50] = {0};// 定义颜色
@@ -45,8 +49,15 @@ struct Food_tlg// 食物的结构体
 	POINT fd[fnum];
 	int flag[fnum];
 	int rsize;
-	DWORD color[fnum];
+	DWORD color[fnum];// 食物各项属性
 }food;
+DIR rands(DIR A,DIR B){
+	int x = 0;
+	srand(GetTickCount());
+	x = rand() % 1;
+	if (x == 0) { return A; }
+	if (x == 1) { return B; }
+}
 void SnakeKill(int i) {
 	snake.leng[i] = 0;
 	snake.life[i] = 0;
@@ -54,7 +65,7 @@ void SnakeKill(int i) {
 		conf[i] = 0;
 
 		lifenum -= 1;
-	}
+	}// 杀死蛇，并将控制标记置为0
 }
 void SnakeDraw(int j) {
 	for (int i = 0; i < snake.leng[j]; i++) {
@@ -70,19 +81,35 @@ void SnakeDraw(int j) {
 	}
 }
 bool WallJudge(int i, int j) {
-	if (WIN_WIDTH - snake.coor[0][i].x <= j || snake.coor[0][i].x <= j)
+	if (px + 0.5 * (WIN_WIDTH) - snake.coor[0][i].x  <= j || snake.coor[0][i].x - (px - 0.5 * (WIN_WIDTH)) <= j)
 		return true;
-	if (WIN_HEIGHT - snake.coor[0][i].y <= j || snake.coor[0][i].y <= j)
+	if (py + 0.5 * (WIN_HEIGHT) - snake.coor[0][i].y  <= j || snake.coor[0][i].y - (py - 0.5 * (WIN_HEIGHT)) <= j)
 		return true;
-	return false;
+	return false;// 判断是否撞墙
 }
 double Dcount(POINT n1, POINT n2) {
 	int d;
 	d = (n1.x - n2.x) ^ 2 + (n1.y - n2.y) ^ 2;
-	return d;
+	return d;// 计算距离的平方
 }
-void Offdir(int i) {;
-	if( WallJudge(i,15)==true){
+void Offdir(int i) {
+	if (WallJudge(i, 50) != true && waitAI >= AIINTERVAL*0.5)
+	{
+		switch (snake.dir[i])
+	 {
+	case UP:snake.dir[i] = rands(RIGHT, LEFT);
+		break;
+	case DOWN:snake.dir[i] = rands(RIGHT, LEFT);
+		break;
+	case LEFT:snake.dir[i] = rands(UP, DOWN);
+		break;
+	case RIGHT:snake.dir[i] = rands(UP, DOWN);
+		break;
+	default:
+		break;
+     }
+	}
+	else if(WallJudge(i, 50) == true && waitAI >= AIINTERVAL * 0.5) {
 		switch (snake.dir[i])
 		{
 		case UP:snake.dir[i] = DOWN;
@@ -98,6 +125,7 @@ void Offdir(int i) {;
 		}
 	}
 
+	// 改变方向
 
 }
 bool HitJudge_Eat(POINT n1, POINT n2) {
@@ -112,9 +140,9 @@ bool HitJudge_Eat(POINT n1, POINT n2) {
 		return false;
 	}
 
-}
+}// 与食物的碰撞检测
 bool HitJudge_Ru(POINT n1, POINT n2) {
-	int dsize =4 ;
+	int dsize =5 ;
 	if (n1.x - dsize <= n2.x && n2.x <= n1.x + dsize &&
 		n1.y - dsize <= n2.y && n2.y <= n1.y + dsize)// 无奈之举
 	{
@@ -124,23 +152,24 @@ bool HitJudge_Ru(POINT n1, POINT n2) {
 	{
 		return false;
 	}
-}
+}// 蛇之间碰撞检测
 void AppearFood(){
 	int i ;
 	srand(GetTickCount());
-	i = rand() % 100;
+	i = rand() % fnum;
 	if (food.flag[i] != 1) {
 		food.flag[i] = 1;
 		food.color[i] = RGB(rand() % 256, rand() % 256, rand() % 256);
 		food.fd[i].x = rand() % WIN_WIDTH;
 		food.fd[i].y = rand() % WIN_HEIGHT;
 	}
-}
+}// 随机出现食物
 void SnakeMove(int j){
 	for (int i = snake.leng[j] - 1; i > 0; i--)
 	{
-		snake.coor[i][j].x = snake.coor[i - 1][j].x;
-		snake.coor[i][j].y = snake.coor[i - 1][j].y;
+			snake.coor[i][j].x = snake.coor[i - 1][j].x;
+			snake.coor[i][j].y = snake.coor[i - 1][j].y;
+
 	}// 蛇身继承运动
 	switch (snake.dir[j])
 	{
@@ -165,48 +194,48 @@ void EatFood(int j){
 			snake.score[j] += 10;
 			food.flag[i] = 0;
 		}
-	}
+	}// 进食
 }
 void KeyControl(){
-	if (GetAsyncKeyState(VK_UP) && snake.dir[0] != DOWN) {
+	if (GetAsyncKeyState(VK_UP)) {
 		snake.dir[0] = UP;
 	}
-	if (GetAsyncKeyState(VK_DOWN) && snake.dir[0] != UP) {
+	if (GetAsyncKeyState(VK_DOWN)) {
 		snake.dir[0] = DOWN;
 	}
-	if (GetAsyncKeyState(VK_LEFT) && snake.dir[0] != RIGHT) {
+	if (GetAsyncKeyState(VK_LEFT)) {
 		snake.dir[0] = LEFT;
 	}
-	if (GetAsyncKeyState(VK_RIGHT) && snake.dir[0] != LEFT) {
+	if (GetAsyncKeyState(VK_RIGHT)) {
 		snake.dir[0] = RIGHT;
 	}
 	if (GetAsyncKeyState(VK_SPACE)) {
 		snake.speed[0] = RUSH; // 加速
 	}
+	if (GetAsyncKeyState(VK_ESCAPE))
+	{exit(233333); }
 }// 使用了winAPI
 void DeathJudge(){
 	for (int j = 0; j <= ainum; j++) {
 		for (int k = 0; k <= ainum; k++) 
 		{
 		 for (int i = 1; i <= snake.leng[0] - 1; i++)
-		 {
-			if (HitJudge_Ru(snake.coor[i][k], snake.coor[0][j]) == true || WallJudge(j, 5))// 碰撞
+		 { if(j !=k){	
+			 if (HitJudge_Ru(snake.coor[i][k], snake.coor[0][j]) == true || WallJudge(j, 5))// 碰撞
 			{
 			      if (j == 0){					
 					snake.life[0] = 0;
 					SnakeKill(0);
-					_getch();
-					Sleep(1000);
-					exit(233333);
-					getchar();
-				  }
+				  }// 游戏结束
 				  else{ 
 
-					  SnakeKill(j);
+					  SnakeKill(j);// AI蛇死亡
 				  }
 
 
 			}
+		 }
+		
 		 }
 		}
 
@@ -222,7 +251,7 @@ void AppearAI() {
 		rand_y = rand() % WIN_HEIGHT;
 		conf[j] = 1;
 		snake.leng[j] = 3;
-		snake.dir[j] = LEFT;// 暂定左方向
+		snake.dir[j] = rands(rands(LEFT,RIGHT), rands(UP,DOWN));
 		snake.score[j] = 0;
 		snake.rsize[j] = 10;
 		snake.speed[j] = NORMAL+25;
@@ -240,31 +269,30 @@ void AppearAI() {
 	}// AI对象初始化
 
 }
-void AIhitSure() {
-	int wait = 0;
-	for (int i = 1; i <= ainum; i++) {
-		for (int j = 1; j <= ainum; j++)
+void AIhitSure(int j) {
+		for (int i= 1; i <= ainum; i++)
 		{
 			for(int k =1;k<=snake.leng[j]-1;k++){
 				if (i != j) {
-					if (Dcount(snake.coor[0][i], snake.coor[k][j]) <= 400)
-						Offdir(i);
+					if (Dcount(snake.coor[0][j], snake.coor[k][i]) <= 400)
+						Offdir(j);
+					if (HitJudge_Ru(snake.coor[0][j], snake.coor[k][j]) == true)
+						Offdir(j);
 				}
 			}
 		}
-		if (WallJudge(i,30) == true) {
-			Offdir(i);
+		if (WallJudge(j,30) == true) {
+			Offdir(j);
 		}
-	}
-}
+}// 避免AI蛇碰撞
 void AIJudgeDir(int j){
 	double min;
 	double d;
 	int f,dx,dy;
 	f = 0;
-	min = Dcount(snake.coor[0][0],snake.coor[0][j]);
+	min = d = Dcount(snake.coor[0][0],snake.coor[0][j]);
 	for (int i = 0; i < fnum; i++)
-	{
+	{ if (food.flag[i]==1)
 		d = hatred * Dcount(snake.coor[0][j],food.fd[i]);
 		if (min > d) {
 			min = d;
@@ -278,26 +306,34 @@ void AIJudgeDir(int j){
 			if (abs(dx) >= abs(dy)) {
 				if (dx <= 0)
 				{
-					if (snake.dir[j] != RIGHT)
-						snake.dir[j] = LEFT;
+					if (waitAI >= AIINTERVAL)
+					{
+						snake.dir[j] = LEFT; waitAI = 0;
+					}
 				}
 				else
 				{
-					if (snake.dir[j] != LEFT)
-						snake.dir[j] = RIGHT;
+					if (waitAI >= AIINTERVAL)
+					{
+						snake.dir[j] = RIGHT; waitAI = 0;
+					}
 				}
 			}
 			else
 			{
 				if (dy <= 0)
 				{
-					if (snake.dir[j] != DOWN)
-						snake.dir[j] = UP;
+					if ( waitAI >= AIINTERVAL)
+					{
+						snake.dir[j] = UP; waitAI = 0;
+					}
 				}
 				else
 				{
-					if (snake.dir[j] != UP)
-						snake.dir[j] = DOWN;
+					if (waitAI >= AIINTERVAL)
+					{
+						snake.dir[j] = DOWN; waitAI = 0;
+					}
 				}
 			}
 		}
@@ -308,31 +344,39 @@ void AIJudgeDir(int j){
 		if (abs(dx) >= abs(dy)) {
 			if (dx <= 0)
 			{
-				if (snake.dir[j] != RIGHT)
-					snake.dir[j] = LEFT;
+				if (waitAI >= AIINTERVAL)
+				{
+					snake.dir[j] = LEFT; waitAI = 0;
+				}
 			}
 			else
 			{
-				if (snake.dir[j] != LEFT)
-					snake.dir[j] = RIGHT;
+				if ( waitAI >= AIINTERVAL)
+				{
+					snake.dir[j] = RIGHT; waitAI = 0;
+				}
 			}
 		}
 		else
 		{
 			if (dy <= 0)
 			{
-				if (snake.dir[j] != DOWN)
-					snake.dir[j] = UP;
+				if ( waitAI >= AIINTERVAL)
+				{
+					snake.dir[j] = UP; waitAI = 0;
+				}
 			}
 			else
 			{
-				if (snake.dir[j] != UP)
-					snake.dir[j] = DOWN;
+				if ( waitAI >= AIINTERVAL)
+				{
+					snake.dir[j] = DOWN; waitAI = 0;
+				}
 			}
 		}
 	}
-	AIhitSure();
- }
+	AIhitSure(j);
+ }// 方向判断
 void AIconf() {
 	for (int j = 1; j <= ainum; j++) 
 	{
@@ -340,14 +384,14 @@ void AIconf() {
 		SnakeMove(j);
 		EatFood(j);
 	}
-}
+}// AI控制
 void Gameinit() {
 	srand(GetTickCount());
 	int i = 0;
 	/* 初始化蛇 */
 	conf[0] = 1;
 	snake.leng[0] = 3;
-	snake.dir[0] = LEFT;// 暂定左方向
+	snake.dir[0] = rands(rands(LEFT, RIGHT), rands(UP, DOWN));
 	snake.score[0] = 0;
 	snake.rsize[0] = 10;
 	snake.speed[0] = NORMAL;
@@ -365,11 +409,13 @@ void Gameinit() {
 	/* 初始化蛇结束 */
 
 	/* 初始化食物 */
-	food.fd[i].x = rand() % WIN_WIDTH;
-	food.fd[i].y = rand() % WIN_HEIGHT;
-	food.flag[i] = 1;
-	food.rsize = 5;
-	food.color[i] = RGB(rand() % 256, rand() % 256, rand() % 256);
+	for (int k = 0; k <= 0.05 * fnum; k++) {
+		food.fd[k].x = rand() % WIN_WIDTH;
+		food.fd[k].y = rand() % WIN_HEIGHT;
+		food.flag[k] = 1;
+		food.rsize = 5;
+		food.color[k] = RGB(rand() % 256, rand() % 256, rand() % 256);
+	}
 	/* 初始化食物结束 */
 
 	/* 初始化AI蛇 */
@@ -407,6 +453,18 @@ void GameDraw() {
 	outtextxy(20, 40, tmp_num);
 	/* 显示分数结束 */
 
+	/* 提示显示 */
+	if (lifenum == 1 && snake.life[0] != 0)
+	{	
+		outtextxy(WIN_WIDTH / 2 - 25, WIN_HEIGHT / 2 - 10, "YOU WIN!");
+		Sleep(1000);
+	}
+	if (snake.life[0] == 0) {
+		outtextxy(WIN_WIDTH / 2 - 30, WIN_HEIGHT / 2 - 10,"GAME OVER!");
+		Sleep(1000);
+	}
+	/* 提示显示 */
+		
 }
 int main() {
 	int wait = 0;
@@ -418,6 +476,7 @@ int main() {
 	t1 = t2 = t3 = t4 = GetTickCount();
 	BeginBatchDraw();
 	while (1) {
+		waitAI += 10;
 		if ((t2 - t1) > snake.speed[0]) {
 			SnakeMove(0);
 			t1 = t2;
