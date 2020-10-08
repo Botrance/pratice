@@ -4,6 +4,7 @@
 #pragma warning(disable:4996)// 去除警告
 #pragma warning(disable:28159)// 去除警告
 #pragma warning(disable:4018)// 去除警告
+#pragma warning(disable:6031)// 去除警告
 #define WIN_WIDTH 1024
 #define WIN_HEIGHT 768// 窗口宽高
 #define MAX_SHAKE 32767// 定义一个足够大的最大长度
@@ -11,9 +12,11 @@
 const int RUSH = 30;
 const int NORMAL = 60;
 const int INTERVAL = 500;
-const double hatred = 1.0;
+const double hatred = 100.0;
+const int fnum = 500;
+const int ainum = 10;
 int conf[100] = {0};
-int ainum = 5;
+int lifenum = 0;
 enum DIR // 蛇的方向
 {
 	UP,
@@ -25,7 +28,7 @@ struct Snake_tlg // 蛇的结构体
 {
 public :
 	int conf[50];// 决定是玩家操控还是电脑操控
-	int live[50];// 决定蛇的存活
+	int life[50];// 决定蛇的存活
 	int leng[50];// 蛇的长度节，决定蛇身由多少圆形构成
 	int dir[50];// 蛇的方向
 	int score[50];// 成绩
@@ -39,13 +42,19 @@ public :
 }snake;
 struct Food_tlg// 食物的结构体
 {
-	POINT fd[101];
-	int flag[100];
+	POINT fd[fnum];
+	int flag[fnum];
 	int rsize;
-	DWORD color[100];
+	DWORD color[fnum];
 }food;
 void SnakeKill(int i) {
 	snake.leng[i] = 0;
+	snake.life[i] = 0;
+	if (conf[i] == 1 && snake.life[i] == 0) {
+		conf[i] = 0;
+
+		lifenum -= 1;
+	}
 }
 void SnakeDraw(int j) {
 	for (int i = 0; i < snake.leng[j]; i++) {
@@ -72,10 +81,8 @@ double Dcount(POINT n1, POINT n2) {
 	d = (n1.x - n2.x) ^ 2 + (n1.y - n2.y) ^ 2;
 	return d;
 }
-void Offdir(int i) {
-	int wait = 0;
-	wait += 10;
-	if(wait>=30 || WallJudge(i,15)==true){
+void Offdir(int i) {;
+	if( WallJudge(i,15)==true){
 		switch (snake.dir[i])
 		{
 		case UP:snake.dir[i] = DOWN;
@@ -89,8 +96,8 @@ void Offdir(int i) {
 		default:
 			break;
 		}
-		wait = 0;
 	}
+
 
 }
 bool HitJudge_Eat(POINT n1, POINT n2) {
@@ -107,7 +114,7 @@ bool HitJudge_Eat(POINT n1, POINT n2) {
 
 }
 bool HitJudge_Ru(POINT n1, POINT n2) {
-	int dsize = 3;
+	int dsize =4 ;
 	if (n1.x - dsize <= n2.x && n2.x <= n1.x + dsize &&
 		n1.y - dsize <= n2.y && n2.y <= n1.y + dsize)// 无奈之举
 	{
@@ -150,7 +157,7 @@ void SnakeMove(int j){
 	}//移动
 }
 void EatFood(int j){
-	for (int i = 0; i <= 100; i++) {
+	for (int i = 0; i < fnum; i++) {
 		if (HitJudge_Eat(food.fd[i], snake.coor[0][j]) == true && food.flag[i] == 1 && 
 			snake.leng[j]!=0)//暂时使用这样的碰撞检测
 		{
@@ -179,24 +186,30 @@ void KeyControl(){
 }// 使用了winAPI
 void DeathJudge(){
 	for (int j = 0; j <= ainum; j++) {
-		for (int i = 1; i <= snake.leng[0] - 1; i++)
+		for (int k = 0; k <= ainum; k++) 
 		{
-			if (HitJudge_Ru(snake.coor[0][j], snake.coor[i][j]) == true || WallJudge(j, 5)) 
+		 for (int i = 1; i <= snake.leng[0] - 1; i++)
+		 {
+			if (HitJudge_Ru(snake.coor[i][k], snake.coor[0][j]) == true || WallJudge(j, 5))// 碰撞
 			{
-				if(j==0){
-			    snake.live[0]=0;
-				SnakeKill(0);
-				outtextxy(512, 384, "Game Over!");				
-				Sleep(1000);
-				_getch();
-				exit(233333);}
-				
+			      if (j == 0){					
+					snake.life[0] = 0;
+					SnakeKill(0);
+					_getch();
+					Sleep(1000);
+					exit(233333);
+					getchar();
+				  }
+				  else{ 
+
+					  SnakeKill(j);
+				  }
+
+
 			}
-			if (HitJudge_Ru(snake.coor[0][j], snake.coor[i][j]) == true || WallJudge(j, 5)) {
-				snake.live[j] = 0;
-				SnakeKill(j);
-			}
+		 }
 		}
+
 	}
 }
 void AppearAI() {
@@ -222,7 +235,7 @@ void AppearAI() {
 		snake.r[j] = rand() % 256;
 		snake.g[j] = rand() % 256;
 		snake.b[j] = rand() % 256;
-		snake.live[j] = 1;
+		snake.life[j] = 1;
 		SnakeDraw(j);
 	}// AI对象初始化
 
@@ -250,7 +263,7 @@ void AIJudgeDir(int j){
 	int f,dx,dy;
 	f = 0;
 	min = Dcount(snake.coor[0][0],snake.coor[0][j]);
-	for (int i = 1; i <= 100; i++)
+	for (int i = 0; i < fnum; i++)
 	{
 		d = hatred * Dcount(snake.coor[0][j],food.fd[i]);
 		if (min > d) {
@@ -347,7 +360,8 @@ void Gameinit() {
 	snake.r[0] = 66;
 	snake.g[0] = 75;
 	snake.b[0] = 98;
-	snake.live[0] = 1;
+	snake.life[0] = 1;
+	lifenum = 1;
 	/* 初始化蛇结束 */
 
 	/* 初始化食物 */
@@ -360,20 +374,21 @@ void Gameinit() {
 
 	/* 初始化AI蛇 */
 	AppearAI();
+	lifenum += ainum;
 	/* 初始化AI蛇结束 */
 }
 void GameDraw() {
 	setbkcolor(RGB(106, 170, 150));// 背景颜色设置
 	cleardevice();
 	/* 画蛇 */
-	for (int j = 0; j <= 100; j++) {
+	for (int j = 0; j <= ainum; j++) {
 		if (conf[j] == 1)
 			SnakeDraw(j);
 	}
 	/* 画蛇结束 */
 
 	/* 画食物 */
-	for (int i = 0; i <= 100; i++) {
+	for (int i = 0; i < fnum; i++) {
 		if (food.flag[i] == 1) {
 			setfillcolor(food.color[i]);
 			fillcircle(food.fd[i].x, food.fd[i].y, food.rsize);
@@ -382,10 +397,14 @@ void GameDraw() {
 	/* 画食物结束 */
 
 	/* 显示分数开始 */
-	char tmp[20] = "";
-	sprintf(tmp, "分数:%d", snake.score[0]);
+	char tmp_score[20] = "";
+	sprintf(tmp_score, "分数:%d", snake.score[0]);
 	setbkmode(TRANSPARENT);
-	outtextxy(20, 20, tmp);
+	outtextxy(20, 20, tmp_score);
+	char tmp_num[20] = "";
+	sprintf(tmp_num, "剩余:%d", lifenum);
+	setbkmode(TRANSPARENT);
+	outtextxy(20, 40, tmp_num);
 	/* 显示分数结束 */
 
 }
