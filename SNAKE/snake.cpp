@@ -112,22 +112,6 @@ void Offdir(int i) {
 		break;
      }
 	}
-	else if(WallJudge(i,1) == true) {
-		snake.waitAI[i] = 0;
-		switch (snake.dir[i])
-		{
-		case UP:if (snake.coor[0][i].y <=50)snake.dir[i] = DOWN;
-			break;
-		case DOWN:if (WIN_HEIGHT - snake.coor[0][i].y <= 50)snake.dir[i] = UP;
-			break;
-		case LEFT:if (snake.coor[0][i].x <= 50)snake.dir[i] = RIGHT;
-			break;
-		case RIGHT: if(WIN_WIDTH - snake.coor[0][i].y <= 50)snake.dir[i] = LEFT;
-			break;
-		default:
-			break;
-		}
-	}
 
 	// 改变方向
 
@@ -305,7 +289,7 @@ void AIDir(int j) {
 			}
 		}
 	}
-	if (f == 0&& snake.waitAIX[j]>=AIINTERVAL&&min<=200) {
+	if (f == 0&& snake.waitAIX[j]>=AIINTERVAL&&min<=25*hatred) {
 		snake.waitAIX[j] = 0;
 		dx = snake.coor[1][0].x - snake.coor[0][j].x;
 		dy = snake.coor[1][0].y - snake.coor[0][j].y;
@@ -328,6 +312,18 @@ void AIDir(int j) {
 			}
 	else if(f == 1 && snake.waitAIX[j] >= AIINTERVAL && min <= 500) {
 		snake.waitAIX[j] = 0;
+		if (snake.waitAI[j] >= AIINTERVAL * 0.5)
+		{
+			snake.waitAI[j] = 0;
+			if (snake.dir[j] == UP || snake.dir[j] == DOWN)
+				snake.dir[j] = rands(LEFT, RIGHT);
+			if (snake.dir[j] == UP || snake.dir[j] == DOWN)
+				snake.dir[j] = rands(LEFT, RIGHT);
+			if (snake.dir[j] == LEFT || snake.dir[j] == RIGHT)
+				snake.dir[j] = rands(UP, DOWN);
+			if (snake.dir[j] == LEFT || snake.dir[j] == RIGHT)
+				snake.dir[j] = rands(UP, DOWN);
+		}
 		dx = food.fd[f].x - snake.coor[0][j].x;
 		dy = food.fd[f].y - snake.coor[0][j].y;
 		if (dx >= 0 && dy >= 0)
@@ -348,18 +344,7 @@ void AIDir(int j) {
 		}
 	}
 	AIhitSure(j);
-	if (snake.waitAI[j] >= AIINTERVAL*0.5) 
-		{
-			snake.waitAI[j] = 0;
-			if (snake.dir[j] == UP || snake.dir[j] == DOWN)
-				snake.dir[j] = rands(LEFT, RIGHT);
-			if (snake.dir[j] == UP || snake.dir[j] == DOWN)
-				snake.dir[j] = rands(LEFT, RIGHT);
-			if (snake.dir[j] == LEFT || snake.dir[j] == RIGHT)
-				snake.dir[j] = rands(UP, DOWN);
-			if (snake.dir[j] == LEFT || snake.dir[j] == RIGHT)
-				snake.dir[j] = rands(UP, DOWN);
-		}
+
 }// 方向判断
 void AIconf() {
 	srand(GetTickCount());
