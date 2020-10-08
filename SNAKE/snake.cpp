@@ -93,8 +93,9 @@ double Dcount(POINT n1, POINT n2) {
 	return d;// 计算距离的平方
 }
 void Offdir(int i) {
-	if (WallJudge(i, 50) != true && waitAI >= AIINTERVAL*0.5)
+	if (WallJudge(i, 60) != true && waitAI >= AIINTERVAL)
 	{
+		waitAI = 0;
 		switch (snake.dir[i])
 	 {
 	case UP:snake.dir[i] = rands(RIGHT, LEFT);
@@ -109,7 +110,7 @@ void Offdir(int i) {
 		break;
      }
 	}
-	else if(WallJudge(i, 50) == true && waitAI >= AIINTERVAL * 0.5) {
+	else if(WallJudge(i, 50) == true) {
 		switch (snake.dir[i])
 		{
 		case UP:snake.dir[i] = DOWN;
@@ -251,7 +252,7 @@ void AppearAI() {
 		rand_y = rand() % WIN_HEIGHT;
 		conf[j] = 1;
 		snake.leng[j] = 3;
-		snake.dir[j] = rands(rands(LEFT,RIGHT), rands(UP,DOWN));
+		snake.dir[j] = LEFT;
 		snake.score[j] = 0;
 		snake.rsize[j] = 10;
 		snake.speed[j] = NORMAL+25;
@@ -275,8 +276,6 @@ void AIhitSure(int j) {
 			for(int k =1;k<=snake.leng[j]-1;k++){
 				if (i != j) {
 					if (Dcount(snake.coor[0][j], snake.coor[k][i]) <= 400)
-						Offdir(j);
-					if (HitJudge_Ru(snake.coor[0][j], snake.coor[k][j]) == true)
 						Offdir(j);
 				}
 			}
